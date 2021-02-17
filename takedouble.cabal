@@ -20,6 +20,8 @@ library
                      , cryptonite
                      , directory
                      , filepath
+                     , memory
+                     , parallel
 
 executable takedouble
   main-is:            Main.hs

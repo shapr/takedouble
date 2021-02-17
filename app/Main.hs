@@ -11,7 +11,8 @@ main = do
     [dir, mbytes]
       | [(bytes, "")] <- reads mbytes,
         bytes >= 1 ->
-        findDuplicates dir bytes
+        -- findDuplicates dir bytes -- original findDuplicates
+        findDuplicates' dir bytes
     _ -> do
       name <- getProgName
       printf "Something went wrong - please use ./%s <dir> <bytes>\n" name
