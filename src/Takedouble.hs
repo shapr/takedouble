@@ -21,15 +21,15 @@ type Hash = BS.ByteString
 
 type FileSize = Integer
 
-getHashes :: [(BL.ByteString, FilePath)] -> [HashFile]
+getHashes :: [(BS.ByteString, FilePath)] -> [HashFile]
 getHashes bsfps =
   -- this pure isn't really needed, or the IO in the type signature
-  (first hashlazy <$> bsfps) `using` parBuffer numCapabilities rdeepseq
+  (first hash <$> bsfps) `using` parBuffer numCapabilities rdeepseq
 
-getConts :: FileSize -> [FilePath] -> IO [(BL.ByteString, FilePath)]
+getConts :: FileSize -> [FilePath] -> IO [(BS.ByteString, FilePath)]
 getConts fsize fps = do
   notTooBig <- filterM (checkSize fsize) fps
-  conts <- traverse BL.readFile notTooBig
+  conts <- traverse BS.readFile notTooBig
   pure $ zip conts fps
 
 checkSize :: Integer -> FilePath -> IO Bool
