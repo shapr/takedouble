@@ -2,8 +2,10 @@ module Takedouble where
 
 import Control.Monad
 import Control.Parallel.Strategies
-import Crypto.Hash
+import Crypto.Hash.SHA1
+import Data.Bifunctor
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
 import GHC.Conc
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.FilePath.Posix ((</>))
@@ -11,23 +13,23 @@ import System.IO (IOMode (ReadMode), hFileSize, withFile)
 import Text.Printf (printf)
 
 type HashFile =
-  ( Digest SHA1, -- SHA1 cause maybe it's fast?
+  ( Hash, -- SHA1 cause maybe it's fast?
     FilePath -- filepath
   )
 
+type Hash = BS.ByteString
+
 type FileSize = Integer
 
-getHashes :: [(BS.ByteString, FilePath)] -> IO [HashFile]
-getHashes bsfps = do
-  let bs = fst <$> bsfps
-      fps = snd <$> bsfps
+getHashes :: [(BL.ByteString, FilePath)] -> [HashFile]
+getHashes bsfps =
   -- this pure isn't really needed, or the IO in the type signature
-  pure (zip (hash <$> bs) fps `using` parBuffer numCapabilities rseq)
+  (first hashlazy <$> bsfps) `using` parBuffer numCapabilities rdeepseq
 
-getConts :: FileSize -> [FilePath] -> IO [(BS.ByteString, FilePath)]
+getConts :: FileSize -> [FilePath] -> IO [(BL.ByteString, FilePath)]
 getConts fsize fps = do
   notTooBig <- filterM (checkSize fsize) fps
-  conts <- traverse BS.readFile notTooBig
+  conts <- traverse BL.readFile notTooBig
   pure $ zip conts fps
 
 checkSize :: Integer -> FilePath -> IO Bool
@@ -79,7 +81,7 @@ findDuplicates' dir bytes = do
   exists <- doesDirectoryExist dir
   if exists
     then do
-      getFileNames dir >>= getConts bytes >>= getHashes >>= findSameHashes
+      getFileNames dir >>= getConts bytes >>= pure . getHashes >>= findSameHashes
     else printf "Sorry, the directory \"%s\" does not exist...\n" dir
 
 findSameHashes :: [HashFile] -> IO ()

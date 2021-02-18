@@ -17,7 +17,7 @@ library
   ghc-options:         -Wall -fno-warn-name-shadowing
   build-depends:       base >= 4.11 && < 5
                      , bytestring
-                     , cryptonite
+                     , cryptohash-sha1
                      , directory
                      , filepath
                      , memory
