@@ -10,4 +10,4 @@ After that, `takedouble <dirname>` so you could use `takedouble ~/` for example.
 
 # is it fast?
 
-On my ThinkPad with six Xeon cores and a 2TB Samsung 970 Evo Plus,  I can check 124822 files in 4.86 seconds.
+On my ThinkPad with six Xeon cores and a 2TB Samsung 970 Evo Plus,  I can check 124822 files in 1.9 seconds.

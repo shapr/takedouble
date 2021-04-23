@@ -1,7 +1,7 @@
 module Main where
 
 import System.Environment (getArgs, getProgName)
-import Takedouble
+import Takedouble (findDuplicates, getFileNames)
 import Text.Printf (printf)
 
 main :: IO ()

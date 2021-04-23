@@ -1,6 +1,5 @@
 module Takedouble (findDuplicates, getFileNames) where
 
-import Crypto.Hash.SHA1 (hash)
 import qualified Data.ByteString as BS
 import Data.List (group, sort)
 import Data.Traversable (forM)
@@ -18,16 +17,22 @@ import System.IO
 data File = File
   { filepath :: FilePath,
     filesize :: Integer,
-    firstchunk :: Hash, -- will the chunks be lazy?
-    lastchunk :: Hash
+    firstchunk :: BS.ByteString, -- will the chunks be lazy?
+    lastchunk :: BS.ByteString
     -- allchunks :: Hash
   }
-  deriving (Ord, Show)
 
 -- don't compare by filepath!
 instance Eq File where
   (File _ fs1 firstchunk1 lastchunk1) == (File _ fs2 firstchunk2 lastchunk2) =
     (fs1, firstchunk1, lastchunk1) == (fs2, firstchunk2, lastchunk2)
+
+instance Ord File where
+  compare (File _ fs1 firstchunk1 lastchunk1) (File _ fs2 firstchunk2 lastchunk2) =
+    compare (fs1, firstchunk1, lastchunk1) (fs2, firstchunk2, lastchunk2)
+
+instance Show File where
+  show (File fp _ _ _) = show fp
 
 findDuplicates :: [FilePath] -> IO [[File]]
 findDuplicates filenames = do
@@ -50,7 +55,7 @@ getChunks h = do
   begin <- BS.hGet h chunkSize
   hSeek h SeekFromEnd (fromIntegral chunkSize)
   end <- BS.hGet h chunkSize
-  pure (fsize, hash begin, hash end)
+  pure (fsize, begin, end)
 
 -- get all the FilePath values
 getFileNames :: FilePath -> IO [FilePath]
