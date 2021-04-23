@@ -39,12 +39,17 @@ loadFile fp = do
   (fsize, firstchunk, lastchunk) <- withFile fp ReadMode getChunks
   pure $ File fp fsize firstchunk lastchunk
 
+chunkSize ::
+  -- | chunkSize is 4096 so NVMe drives will be especially happy
+  Int
+chunkSize = 4096
+
 getChunks :: Handle -> IO (Integer, Hash, Hash)
 getChunks h = do
   fsize <- hFileSize h
-  begin <- BS.hGet h 2048
-  hSeek h SeekFromEnd 2048
-  end <- BS.hGet h 2048
+  begin <- BS.hGet h chunkSize
+  hSeek h SeekFromEnd (fromIntegral chunkSize)
+  end <- BS.hGet h chunkSize
   pure (fsize, hash begin, hash end)
 
 -- get all the FilePath values
