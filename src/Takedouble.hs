@@ -2,7 +2,7 @@ module Takedouble (findDuplicates, getFileNames) where
 
 import Crypto.Hash.SHA1 (hash)
 import qualified Data.ByteString as BS
-import Data.List (group)
+import Data.List (group, sort)
 import Data.Traversable (forM)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.FilePath.Posix ((</>))
@@ -32,7 +32,7 @@ instance Eq File where
 findDuplicates :: [FilePath] -> IO [[File]]
 findDuplicates filenames = do
   files <- mapM loadFile filenames
-  pure $ filter (\x -> 1 < length x) $ group files
+  pure $ filter (\x -> 1 < length x) $ group (sort files)
 
 loadFile :: FilePath -> IO File
 loadFile fp = do
