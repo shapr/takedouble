@@ -1,25 +1,19 @@
-{ compiler ? "ghc8103" }:
+{ compiler ? "ghc8104" }:
 
 let
   sources = import ./nix/sources.nix;
-  pkgs = import sources.nixpkgs {};
+  pkgs = import sources.nixpkgs { };
 
   gitignore = pkgs.nix-gitignore.gitignoreSourcePure [ ./.gitignore ];
 
   myHaskellPackages = pkgs.haskell.packages.${compiler}.override {
     overrides = hself: hsuper: {
-      "takedouble" =
-        hself.callCabal2nix
-          "takedouble"
-          (gitignore ./.)
-          {};
+      "takedouble" = hself.callCabal2nix "takedouble" (gitignore ./.) { };
     };
   };
 
   shell = myHaskellPackages.shellFor {
-    packages = p: [
-      p."takedouble"
-    ];
+    packages = p: [ p."takedouble" ];
     buildInputs = [
       myHaskellPackages.haskell-language-server
       pkgs.haskellPackages.cabal-install
@@ -39,8 +33,7 @@ let
     name = "takedouble";
     config.Cmd = [ "${exe}/bin/takedouble" ];
   };
-in
-{
+in {
   inherit shell;
   inherit exe;
   inherit docker;

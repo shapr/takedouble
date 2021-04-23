@@ -1,41 +1,51 @@
-module Takedouble where
+module Takedouble (findDuplicates, getFileNames) where
 
-import Control.Monad
-import Control.Parallel.Strategies
-import Crypto.Hash.SHA1
-import Data.Bifunctor
+import Crypto.Hash.SHA1 (hash)
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BL
-import GHC.Conc
+import Data.List (group)
+import Data.Traversable (forM)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.FilePath.Posix ((</>))
-import System.IO (IOMode (ReadMode), hFileSize, withFile)
-import Text.Printf (printf)
-
-type HashFile =
-  ( Hash, -- SHA1 cause maybe it's fast?
-    FilePath -- filepath
+import System.IO
+  ( Handle,
+    IOMode (ReadMode),
+    SeekMode (SeekFromEnd),
+    hFileSize,
+    hSeek,
+    withFile,
   )
 
-type Hash = BS.ByteString
+data File = File
+  { filepath :: FilePath,
+    filesize :: Integer,
+    firstchunk :: Hash, -- will the chunks be lazy?
+    lastchunk :: Hash
+    -- allchunks :: Hash
+  }
+  deriving (Ord, Show)
 
-type FileSize = Integer
+-- don't compare by filepath!
+instance Eq File where
+  (File _ fs1 firstchunk1 lastchunk1) == (File _ fs2 firstchunk2 lastchunk2) =
+    (fs1, firstchunk1, lastchunk1) == (fs2, firstchunk2, lastchunk2)
 
-getHashes :: [(BS.ByteString, FilePath)] -> [HashFile]
-getHashes bsfps =
-  -- this pure isn't really needed, or the IO in the type signature
-  (first hash <$> bsfps) `using` parBuffer numCapabilities rdeepseq
+findDuplicates :: [FilePath] -> IO [[File]]
+findDuplicates filenames = do
+  files <- mapM loadFile filenames
+  pure $ filter (\x -> 1 < length x) $ group files
 
-getConts :: FileSize -> [FilePath] -> IO [(BS.ByteString, FilePath)]
-getConts fsize fps = do
-  notTooBig <- filterM (checkSize fsize) fps
-  conts <- traverse BS.readFile notTooBig
-  pure $ zip conts fps
+loadFile :: FilePath -> IO File
+loadFile fp = do
+  (fsize, firstchunk, lastchunk) <- withFile fp ReadMode getChunks
+  pure $ File fp fsize firstchunk lastchunk
 
-checkSize :: Integer -> FilePath -> IO Bool
-checkSize allowed h = do
-  size <- withFile h ReadMode hFileSize
-  pure $ size <= allowed
+getChunks :: Handle -> IO (Integer, Hash, Hash)
+getChunks h = do
+  fsize <- hFileSize h
+  begin <- BS.hGet h 2048
+  hSeek h SeekFromEnd 2048
+  end <- BS.hGet h 2048
+  pure (fsize, hash begin, hash end)
 
 -- get all the FilePath values
 getFileNames :: FilePath -> IO [FilePath]
@@ -48,53 +58,6 @@ getFileNames curDir = do
     if exists
       then getFileNames path'
       else pure $ pure path'
-  return $ concat files
+  pure $ concat files
 
-getRecursiveContents :: FilePath -> FileSize -> IO [HashFile]
-getRecursiveContents curDir maxsize = do
-  names <- getDirectoryContents curDir
-  let dirs = filter (`notElem` [".", ".."]) names
-  files <- forM dirs $ \path -> do
-    let path' = curDir </> path
-    exists <- doesDirectoryExist path'
-    if exists
-      then getRecursiveContents path' maxsize
-      else genFileHash path' maxsize
-  return $ concat files
-
-genFileHash :: FilePath -> FileSize -> IO [HashFile]
-genFileHash path maxsize = do
-  size <- withFile path ReadMode hFileSize
-  if size <= maxsize
-    then BS.readFile path >>= \bs -> return [(hash bs, path)]
-    else return []
-
-findDuplicates :: FilePath -> FileSize -> IO ()
-findDuplicates dir bytes = do
-  exists <- doesDirectoryExist dir
-  if exists
-    then getRecursiveContents dir bytes >>= findSameHashes
-    else printf "Sorry, the directory \"%s\" does not exist...\n" dir
-
-findDuplicates' :: FilePath -> FileSize -> IO ()
-findDuplicates' dir bytes = do
-  exists <- doesDirectoryExist dir
-  if exists
-    then do
-      getFileNames dir >>= getConts bytes >>= pure . getHashes >>= findSameHashes
-    else printf "Sorry, the directory \"%s\" does not exist...\n" dir
-
-findSameHashes :: [HashFile] -> IO ()
-findSameHashes [] = return ()
-findSameHashes ((hash, fp) : xs) = do
-  case lookup hash xs of
-    (Just dupFile) ->
-      printf
-        "===========================\n\
-        \Found duplicate:\n\
-        \=> %s \n\
-        \=> %s \n\n"
-        fp
-        dupFile
-        >> findSameHashes xs
-    _ -> findSameHashes xs
+type Hash = BS.ByteString
