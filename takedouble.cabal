@@ -18,6 +18,7 @@ library
   build-depends:       base >= 4.11 && < 5
                      , bytestring
                      , directory
+                     , extra
                      , filepath
 
 executable takedouble

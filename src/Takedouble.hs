@@ -1,7 +1,8 @@
-module Takedouble (findDuplicates, getFileNames) where
+module Takedouble (findDuplicates, getFileNames, checkFullDuplicates, File (..)) where
 
 import qualified Data.ByteString as BS
-import Data.List (group, sort)
+import Data.List (group, sort, sortOn)
+import Data.List.Extra (groupOn)
 import Data.Traversable (forM)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.FilePath.Posix ((</>))
@@ -17,9 +18,8 @@ import System.IO
 data File = File
   { filepath :: FilePath,
     filesize :: Integer,
-    firstchunk :: BS.ByteString, -- will the chunks be lazy?
+    firstchunk :: BS.ByteString,
     lastchunk :: BS.ByteString
-    -- allchunks :: Hash
   }
 
 -- don't compare by filepath!
@@ -39,6 +39,15 @@ findDuplicates filenames = do
   files <- mapM loadFile filenames
   pure $ filter (\x -> 1 < length x) $ group (sort files)
 
+checkFullDuplicates :: [FilePath] -> IO [[FilePath]]
+checkFullDuplicates fps = do
+  allContents <- mapM BS.readFile fps
+  let pairs = zip fps allContents
+      sorted = sortOn snd pairs
+      dups = filter (\x -> length x > 1) $ groupOn snd sorted
+      res = (fst <$>) `fmap` dups
+  pure res
+
 loadFile :: FilePath -> IO File
 loadFile fp = do
   (fsize, firstchunk, lastchunk) <- withFile fp ReadMode getChunks
@@ -53,7 +62,7 @@ getChunks :: Handle -> IO (Integer, Hash, Hash)
 getChunks h = do
   fsize <- hFileSize h
   begin <- BS.hGet h chunkSize
-  hSeek h SeekFromEnd (fromIntegral chunkSize)
+  hSeek h SeekFromEnd (fromIntegral chunkSize) -- [TODO] needs to be read from filesize - filesize % 4096
   end <- BS.hGet h chunkSize
   pure (fsize, begin, end)
 
