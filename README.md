@@ -10,4 +10,4 @@ After that, `takedouble <dirname>` so you could use `takedouble ~/` for example.
 
 # is it fast?
 
-On my ThinkPad with six Xeon cores and a 2TB Samsung 970 Evo Plus,  I can check 124822 files in 1.9 seconds.
+On my ThinkPad with six Xeon cores and a 1TB Samsung 970 Pro, I can check 34393 uncached files in 6.4 seconds. A second run on the same directory takes 2.8 seconds.

@@ -11,9 +11,9 @@ main = do
   case args of
     [dir] ->
       do
-        print $ "reading " <> dir
+        putStrLn $ "reading " <> dir
         filenames <- getFileNames dir
-        print $ "comparing " <> show (length filenames) <> " files"
+        putStrLn $ "comparing " <> show (length filenames) <> " files"
         likelyDups <- findDuplicates filenames -- each element in the list is a list of files that are likely duplicates
         let fnamesOnly = (filepath <$>) `fmap` likelyDups -- convert to a nested list of FilePath
         dups <- mapM checkFullDuplicates fnamesOnly
