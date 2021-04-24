@@ -1,5 +1,5 @@
 # takedouble
-duplicate file finder that reads the filesize and first 4k and last 4k of a file and assumes that's enough to tell you if files are duplicates.
+TakeDouble is a duplicate file finder that reads and checks the filesize and first 4k and last 4k of a file and only then checks the full file to find duplicates.
 
 # How do I make it go?
 You can use nix or cabal to build this.
