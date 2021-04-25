@@ -4,7 +4,7 @@ import qualified Data.ByteString as BS
 import Data.List (group, sort, sortOn)
 import Data.List.Extra (groupOn)
 import Data.Traversable (forM)
-import System.Directory (doesDirectoryExist, getDirectoryContents)
+import System.Directory (doesDirectoryExist, listDirectory)
 import System.FilePath.Posix ((</>))
 import System.IO
   ( Handle,
@@ -58,7 +58,7 @@ chunkSize ::
   Int
 chunkSize = 4096
 
-getChunks :: Handle -> IO (Integer, Hash, Hash)
+getChunks :: Handle -> IO (Integer, BS.ByteString, BS.ByteString)
 getChunks h = do
   fsize <- hFileSize h
   begin <- BS.hGet h chunkSize
@@ -69,14 +69,11 @@ getChunks h = do
 -- get all the FilePath values
 getFileNames :: FilePath -> IO [FilePath]
 getFileNames curDir = do
-  names <- getDirectoryContents curDir
-  let dirs = filter (`notElem` [".", ".."]) names
-  files <- forM dirs $ \path -> do
+  names <- listDirectory curDir
+  files <- forM names $ \path -> do
     let path' = curDir </> path
     exists <- doesDirectoryExist path'
     if exists
       then getFileNames path'
       else pure $ pure path'
   pure $ concat files
-
-type Hash = BS.ByteString
