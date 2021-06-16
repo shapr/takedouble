@@ -1,10 +1,11 @@
 module Takedouble (findDuplicates, getFileNames, checkFullDuplicates, File (..)) where
 
+import Control.Monad.Extra (filterM, ifM)
 import qualified Data.ByteString as BS
 import Data.List (group, sort, sortOn)
 import Data.List.Extra (groupOn)
 import Data.Traversable (forM)
-import System.Directory (doesDirectoryExist, listDirectory)
+import System.Directory (doesDirectoryExist, doesPathExist, listDirectory, pathIsSymbolicLink)
 import System.FilePath.Posix ((</>))
 import System.IO
   ( Handle,
@@ -56,7 +57,7 @@ loadFile fp = do
 chunkSize ::
   -- | chunkSize is 4096 so NVMe drives will be especially happy
   Int
-chunkSize = 4096
+chunkSize = 4 * 1024
 
 getChunks :: Handle -> IO (Integer, BS.ByteString, BS.ByteString)
 getChunks h = do
@@ -70,10 +71,15 @@ getChunks h = do
 getFileNames :: FilePath -> IO [FilePath]
 getFileNames curDir = do
   names <- listDirectory curDir
-  files <- forM names $ \path -> do
+  let names' = (curDir </>) <$> names
+  names'' <- filterM saneFile names'
+  files <- forM names'' $ \path -> do
     let path' = curDir </> path
     exists <- doesDirectoryExist path'
     if exists
       then getFileNames path'
       else pure $ pure path'
   pure $ concat files
+
+saneFile :: FilePath -> IO Bool
+saneFile fp = ifM (doesPathExist fp) (not <$> pathIsSymbolicLink fp) (pure False)
