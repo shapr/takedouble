@@ -1,11 +1,10 @@
-module Takedouble (findDuplicates, getFileNames, checkFullDuplicates, File (..)) where
+module Takedouble (findPossibleDuplicates, getFileNames, checkFullDuplicates, File (..)) where
 
-import Control.Monad.Extra (filterM, ifM)
+import Control.Monad.Extra (filterM, forM, ifM)
 import qualified Data.ByteString as BS
 import Data.List (group, sort, sortOn)
 import Data.List.Extra (groupOn)
-import Data.Traversable (forM)
-import System.Directory (doesDirectoryExist, doesPathExist, listDirectory, pathIsSymbolicLink)
+import System.Directory (doesDirectoryExist, doesPathExist, listDirectory)
 import System.FilePath.Posix ((</>))
 import System.IO
   ( Handle,
@@ -15,6 +14,10 @@ import System.IO
     hSeek,
     withFile,
   )
+import System.Posix.Files
+  ( getFileStatus,
+    isRegularFile,
+  )
 
 data File = File
   { filepath :: FilePath,
@@ -23,7 +26,7 @@ data File = File
     lastchunk :: BS.ByteString
   }
 
--- don't compare by filepath!
+-- | File needs a custom Eq instance so filepath is not part of the comparison
 instance Eq File where
   (File _ fs1 firstchunk1 lastchunk1) == (File _ fs2 firstchunk2 lastchunk2) =
     (fs1, firstchunk1, lastchunk1) == (fs2, firstchunk2, lastchunk2)
@@ -35,8 +38,9 @@ instance Ord File where
 instance Show File where
   show (File fp _ _ _) = show fp
 
-findDuplicates :: [FilePath] -> IO [[File]]
-findDuplicates filenames = do
+-- | compare files by size, first, and last chunk.
+findPossibleDuplicates :: [FilePath] -> IO [[File]]
+findPossibleDuplicates filenames = do
   files <- mapM loadFile filenames
   pure $ filter (\x -> 1 < length x) $ group (sort files)
 
@@ -54,11 +58,11 @@ loadFile fp = do
   (fsize, firstchunk, lastchunk) <- withFile fp ReadMode getChunks
   pure $ File fp fsize firstchunk lastchunk
 
-chunkSize ::
-  -- | chunkSize is 4096 so NVMe drives will be especially happy
-  Int
+-- | chunkSize is 4096 so NVMe drives will be especially happy
+chunkSize :: Int
 chunkSize = 4 * 1024
 
+-- | fetch the file size and first and last 4k chunks of the file
 getChunks :: Handle -> IO (Integer, BS.ByteString, BS.ByteString)
 getChunks h = do
   fsize <- hFileSize h
@@ -67,7 +71,7 @@ getChunks h = do
   end <- BS.hGet h chunkSize
   pure (fsize, begin, end)
 
--- get all the FilePath values
+-- | get all the FilePath values
 getFileNames :: FilePath -> IO [FilePath]
 getFileNames curDir = do
   names <- listDirectory curDir
@@ -81,5 +85,13 @@ getFileNames curDir = do
       else pure $ pure path'
   pure $ concat files
 
+-- | Check if the file exists, and is not a fifo or broken symbolic link
 saneFile :: FilePath -> IO Bool
-saneFile fp = ifM (doesPathExist fp) (not <$> pathIsSymbolicLink fp) (pure False)
+saneFile fp =
+  ifM
+    (doesPathExist fp)
+    ( do
+        stat <- getFileStatus fp
+        pure $ isRegularFile stat
+    )
+    (pure False)

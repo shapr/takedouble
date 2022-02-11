@@ -1,5 +1,6 @@
 name:                takedouble
 synopsis:            duplicate file finder
+description:         takedouble is a fast duplicate file finder that filters by file size, first and last 4k chunks before checking the full contents of files that pass the filter.
 version:             0.0.1.0
 homepage:            https://github.com/shapr/takedouble
 license:             BSD3
@@ -9,6 +10,9 @@ copyright:           Shae Erisson
 category:            Utilities
 build-type:          Simple
 cabal-version:       >=1.10
+source-repository head
+    type: git
+    location: https://github.com/shapr/takedouble.git
 
 library
   hs-source-dirs:      src
@@ -20,6 +24,7 @@ library
                      , directory
                      , extra
                      , filepath
+                     , unix
 
 executable takedouble
   main-is:            Main.hs
