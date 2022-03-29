@@ -16,6 +16,7 @@ import System.IO
   )
 import System.Posix.Files
   ( getFileStatus,
+    isDirectory,
     isRegularFile,
   )
 
@@ -92,6 +93,6 @@ saneFile fp =
     (doesPathExist fp)
     ( do
         stat <- getFileStatus fp
-        pure $ isRegularFile stat
+        pure $ isRegularFile stat || isDirectory stat
     )
     (pure False)
