@@ -8,6 +8,7 @@ You can use nix or cabal to build this.
 
 After that, `takedouble <dirname>` so you could use `takedouble ~/` for example.
 
-# is it fast?
+# Is it Fast?
 
-On my ThinkPad with six Xeon cores and a 1TB Samsung 970 Pro, I can check 34393 uncached files in 6.4 seconds. A second run on the same directory takes 2.8 seconds.
+On my ThinkPad with six Xeon cores, 128GB RAM, and a 1TB Samsung 970 Pro NVMe (via PCIe 3.0), I can check 34393 uncached files in 6.4 seconds.
+A second run on the same directory takes 2.8 seconds due to file metainfo cached in memory.

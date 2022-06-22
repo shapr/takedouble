@@ -39,7 +39,7 @@ instance Ord File where
 instance Show File where
   show (File fp _ _ _) = show fp
 
--- | compare files by size, first, and last chunk.
+-- | (hopefully) lazy comparison of files by size, first, and last chunk.
 findPossibleDuplicates :: [FilePath] -> IO [[File]]
 findPossibleDuplicates filenames = do
   files <- mapM loadFile filenames
