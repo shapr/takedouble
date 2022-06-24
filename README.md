@@ -8,6 +8,12 @@ You can use nix or cabal to build this.
 
 After that, `takedouble <dirname>` so you could use `takedouble ~/` for example.
 
+If there are common files you'd like to exclude (such as .git directories) you can pass a glob to exclude any matching patterns from the output.
+
+For example
+
+`takedouble <dirname> "**/.git/**"`
+
 # Is it Fast?
 
 On my ThinkPad with six Xeon cores, 128GB RAM, and a 1TB Samsung 970 Pro NVMe (via PCIe 3.0), I can check 34393 uncached files in 6.4 seconds.
