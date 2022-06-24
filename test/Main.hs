@@ -19,18 +19,16 @@ prop_FileEq_no_check_filename :: Property
 prop_FileEq_no_check_filename = property $ do
   File "a" 1024 "abc" "def" === File "b" 1024 "abc" "def"
 
--- prop_Find_Duplicates :: Property
--- prop_Find_Duplicates = property $
---   do
---     withTempDirectory "/tmp" "foo" $ do
---       \dir -> do
---         _ <- genTempFiles dir
---         files <- findPossibleDuplicates [dir]
---         if 1 < length files then pure () else error "no"
+prop_Find_Duplicates :: Property
+prop_Find_Duplicates = property $
+   do
+     files <- liftIO $ withTempDirectory "/tmp" "foo" $
+       \dir -> do
+         _ <- genTempFiles dir
+         filenames <- getFileNames dir
+         findPossibleDuplicates filenames
+     (all allTheSame files) === True
 
--- dir <- liftIO $ genTempFiles
--- files <- liftIO $ findPossibleDuplicates [dir]
--- True === (1 < length files)
 
 genTempFiles :: FilePath -> IO FilePath
 genTempFiles dir = do
@@ -39,3 +37,7 @@ genTempFiles dir = do
   writeFile (dir </> "dup2") "duplicate file"
   writeFile (dir </> "uniq1") "uniq file"
   pure dir
+
+allTheSame :: (Eq a) => [a] -> Bool
+allTheSame [] = False -- For the duplicate finder we want this case to fail. Semantically this makes no sense.
+allTheSame xs = and $ map (== head xs) (tail xs)
