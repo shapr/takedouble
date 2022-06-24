@@ -29,6 +29,7 @@ library
                      , extra
                      , filepath
                      , unix
+                     , filepattern
 
 executable takedouble
   main-is:            Main.hs
@@ -37,6 +38,7 @@ executable takedouble
   ghc-options:        -threaded -O2 -rtsopts "-with-rtsopts=-N -qg"
   build-depends:      base
                     , takedouble
+                    , filepattern
 
 test-suite takedouble-tests
   type:             exitcode-stdio-1.0

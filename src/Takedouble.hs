@@ -5,6 +5,7 @@ import qualified Data.ByteString as BS
 import Data.List (group, sort, sortOn)
 import Data.List.Extra (groupOn)
 import System.Directory (doesDirectoryExist, doesPathExist, listDirectory)
+import System.FilePattern
 import System.FilePath.Posix ((</>))
 import System.IO
   ( Handle,
@@ -40,10 +41,14 @@ instance Show File where
   show (File fp _ _ _) = show fp
 
 -- | (hopefully) lazy comparison of files by size, first, and last chunk.
-findPossibleDuplicates :: [FilePath] -> IO [[File]]
-findPossibleDuplicates filenames = do
-  files <- mapM loadFile filenames
+findPossibleDuplicates :: [FilePath] -> Maybe String -> IO [[File]]
+findPossibleDuplicates filenames glob = do
+  files <- mapM loadFile filteredFilenames
   pure $ filter (\x -> 1 < length x) $ group (sort files)
+  where filteredFilenames =
+          case glob of
+            Nothing -> filenames
+            Just g -> filter (\fn -> not (g ?== fn)) filenames
 
 checkFullDuplicates :: [FilePath] -> IO [[FilePath]]
 checkFullDuplicates fps = do

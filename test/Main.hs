@@ -7,7 +7,6 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Hedgehog
 import Hedgehog.Main
--- import System.Directory
 import System.FilePath.Posix ((</>))
 import System.IO.Temp
 import Takedouble
@@ -29,6 +28,16 @@ prop_Find_Duplicates = property $
          findPossibleDuplicates filenames
      (all allTheSame files) === True
 
+prop_Glob :: Property
+prop_Glob = property $
+   do
+     files <- liftIO $ withTempDirectory "/tmp" "foo" $
+       \dir -> do
+         _ <- genTempFiles dir
+         filenames <- getFileNames dir
+         findPossibleDuplicates filenames $ Just "**"
+     (length files) === 0
+    
 
 genTempFiles :: FilePath -> IO FilePath
 genTempFiles dir = do
