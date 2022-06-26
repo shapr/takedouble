@@ -22,7 +22,7 @@ library
   hs-source-dirs:      src
   default-language:    Haskell2010
   exposed-modules:     Takedouble
-  ghc-options:         -Wall -fno-warn-name-shadowing -O2
+  ghc-options:         -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-name-shadowing -O2
   build-depends:       base >= 4.11 && < 5
                      , bytestring
                      , directory
@@ -35,17 +35,16 @@ executable takedouble
   main-is:            Main.hs
   hs-source-dirs:     app
   default-language:   Haskell2010
-  ghc-options:        -threaded -O2 -rtsopts "-with-rtsopts=-N -qg"
+  ghc-options:        -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -threaded -O2 -rtsopts "-with-rtsopts=-N -qg"
   build-depends:      base
                     , takedouble
-                    , filepattern
 
 test-suite takedouble-tests
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test
   main-is:          Main.hs
   default-language: Haskell2010
-  ghc-options:      -Wall -threaded
+  ghc-options:      -Wall -threaded -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:    base >=4.11 && < 5
                   , directory
                   , extra

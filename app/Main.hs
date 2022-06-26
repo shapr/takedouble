@@ -1,11 +1,15 @@
 module Main where
 
-import Data.List (sort, (\\))
-import System.Environment (getArgs, getProgName)
-import Takedouble (File (..), checkFullDuplicates, findPossibleDuplicates, getFileNames)
-import Text.Printf (printf)
-import System.FilePattern
+import Data.List (sort)
+import System.Environment (getArgs)
+import Takedouble
+  ( File (filepath),
+    checkFullDuplicates,
+    findPossibleDuplicates,
+    getFileNames,
+  )
 
+fetchResults :: [FilePath] -> Maybe String -> IO ()
 fetchResults filenames glob = do
   putStrLn $ "comparing " <> show (length filenames) <> " files"
   likelyDups <- findPossibleDuplicates filenames glob -- each element in the list is a list of files that are likely duplicates
@@ -31,9 +35,8 @@ main = do
         filenames <- getFileNames dir
         fetchResults filenames Nothing
     [dir, glob] -> do
-        putStrLn $ "reading " <> dir
-        filenames <- getFileNames dir
-        fetchResults filenames $ Just glob
+      putStrLn $ "reading " <> dir
+      filenames <- getFileNames dir
+      fetchResults filenames $ Just glob
     _ -> do
-      name <- getProgName
       putStrLn "Something went wrong - See 'takedouble help' for usage."

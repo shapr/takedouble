@@ -3,7 +3,6 @@
 
 module Main where
 
-import Control.Monad
 import Control.Monad.IO.Class
 import Hedgehog
 import Hedgehog.Main
@@ -20,28 +19,28 @@ prop_FileEq_no_check_filename = property $ do
 
 prop_Find_Duplicates :: Property
 prop_Find_Duplicates = property $
-   do
-     files <- liftIO $ withTempDirectory "/tmp" "foo" $
-       \dir -> do
-         _ <- genTempFiles dir
-         filenames <- getFileNames dir
-         findPossibleDuplicates filenames
-     (all allTheSame files) === True
+  do
+    files <- liftIO $
+      withTempDirectory "/tmp" "foo" $
+        \dir -> do
+          _ <- genTempFiles dir
+          filenames <- getFileNames dir
+          findPossibleDuplicates filenames Nothing
+    all allTheSame files === True
 
 prop_Glob :: Property
 prop_Glob = property $
-   do
-     files <- liftIO $ withTempDirectory "/tmp" "foo" $
-       \dir -> do
-         _ <- genTempFiles dir
-         filenames <- getFileNames dir
-         findPossibleDuplicates filenames $ Just "**"
-     (length files) === 0
-    
+  do
+    files <- liftIO $
+      withTempDirectory "/tmp" "foo" $
+        \dir -> do
+          _ <- genTempFiles dir
+          filenames <- getFileNames dir
+          findPossibleDuplicates filenames $ Just "**"
+    length files === 0
 
 genTempFiles :: FilePath -> IO FilePath
 genTempFiles dir = do
-  -- dir <- getTemporaryDirectory
   writeFile (dir </> "dup1") "duplicate file"
   writeFile (dir </> "dup2") "duplicate file"
   writeFile (dir </> "uniq1") "uniq file"
@@ -49,4 +48,4 @@ genTempFiles dir = do
 
 allTheSame :: (Eq a) => [a] -> Bool
 allTheSame [] = False -- For the duplicate finder we want this case to fail. Semantically this makes no sense.
-allTheSame xs = and $ map (== head xs) (tail xs)
+allTheSame xs = all (== head xs) (tail xs)
