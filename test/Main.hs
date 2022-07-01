@@ -1,17 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
 import Control.Monad.IO.Class
 import Hedgehog
-import Hedgehog.Main
+import Kudzu
 import System.FilePath.Posix ((</>))
 import System.IO.Temp
 import Takedouble
 
 main :: IO ()
-main = defaultMain [checkParallel $$(discover)]
+main = do
+  res <- testUntilSameHHMany 3 [prop_FileEq_no_check_filename, prop_Find_Duplicates, prop_Glob]
+  print res
 
 prop_FileEq_no_check_filename :: Property
 prop_FileEq_no_check_filename = property $ do
